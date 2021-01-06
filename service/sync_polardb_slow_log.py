@@ -97,8 +97,10 @@ def store_response_result(resp_result):
 
 
 def start():
-    start_datetime = (datetime.today() + timedelta(-1)).strftime("%Y-%m-%d") + "T00:00Z"
-    end_datetime = (datetime.today() + timedelta(0)).strftime("%Y-%m-%d") + "T00:00Z"
+    day_interval = -1
+    start_datetime = (datetime.today() + timedelta(day_interval)).strftime("%Y-%m-%d") + "T00:00Z"
+    print(start_datetime)
+    end_datetime = (datetime.today() + timedelta(day_interval + 1)).strftime("%Y-%m-%d") + "T00:00Z"
     page_number = 1
     page_size = 100
     while True:
