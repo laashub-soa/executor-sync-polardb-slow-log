@@ -1,4 +1,5 @@
 import json
+import time
 from datetime import timedelta, datetime
 
 from aliyunsdkcore.client import AcsClient
@@ -75,18 +76,22 @@ def store_response_result(resp_result):
         host_address = item["HostAddress"]
         if "online_wjhmadb_r" in host_address or "dms[dms]" in host_address:
             continue
+        execution_start_time = item["ExecutionStartTime"]
+        # 2021-01-05T00:03:01Z
+        data_timestamp = int(
+            time.mktime(time.strptime(execution_start_time[:-6] + "00:00Z", '%Y-%m-%dT%H:%M:%SZ')))  # 丢失掉秒钟精度
         parameters.append([
             db_cluster_id, db_name,
-            item["DBNodeId"], item["ExecutionStartTime"], host_address,
+            item["DBNodeId"], execution_start_time, host_address,
             item["LockTimes"], item["QueryTimes"], item["ParseRowCounts"],
-            item["ReturnRowCounts"], sql_text
+            item["ReturnRowCounts"], sql_text, data_timestamp
         ])
 
     mymysql.execute("""
     INSERT INTO `polardb_slow_log`(`db_cluster_id`, `db_name`
     , `db_node_id`, `execution_start_time`, `host_address`
     , `lock_times`, `query_times`, `parse_row_counts`
-    , `return_row_counts`, `sql_text`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    , `return_row_counts`, `sql_text`, `data_timestamp`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """, parameters, True)
     # TODO 从SQL语句中抽取语句模块, 合并多条语句
 

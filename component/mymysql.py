@@ -37,6 +37,5 @@ def execute(sql, parameters=None, is_batch_insert=False):
                         execute_result = cursor.fetchall()
                 conn.commit()
     except Exception as e:
-        traceback.print_exc(e)
         raise MyServiceException("execute sql error: " + str(e))
     return execute_result
