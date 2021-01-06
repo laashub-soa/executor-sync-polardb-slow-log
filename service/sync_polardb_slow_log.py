@@ -1,19 +1,106 @@
+import json
+from datetime import timedelta, datetime
+
 from aliyunsdkcore.client import AcsClient
 from aliyunsdkpolardb.request.v20170801.DescribeSlowLogRecordsRequest import DescribeSlowLogRecordsRequest
 
+from component import mymysql
 from config import app_conf
 
-client = AcsClient(app_conf["access_key_id"], app_conf["access_secret"],
-                   app_conf["region"])
+region = app_conf["region"]
+client = AcsClient(app_conf["access_key_id"], app_conf["access_secret"], region)
+
+db_cluster_id = app_conf["db_cluster_id"]
 
 
-def request_slow_log():
+def gen_execute_plan():
+    """
+    生成执行计划
+    :return:
+    """
+    pass
+
+
+def request_slow_log(db_cluster_id, start_datetime, end_datetime, page_number, page_size):
+    """
+    请求慢SQL日志
+    :param db_cluster_id:
+    :param start_datetime:
+    :param end_datetime:
+    :param page_number:
+    :param page_size:
+    :return:
+    """
     request = DescribeSlowLogRecordsRequest()
     request.set_accept_format('json')
 
-    request.set_DBClusterId(app_conf["db_cluster_id"])
-    request.set_StartTime("2021-01-05T00:00Z")
-    request.set_EndTime("2021-01-06T00:00Z")
+    request.set_DBClusterId(db_cluster_id)
+    # 格式化前一天的日期
+    request.set_StartTime(start_datetime)
+    request.set_EndTime(end_datetime)
+    request.set_PageNumber(page_number)
+    request.set_PageSize(page_size)
 
     response = client.do_action_with_exception(request)
-    print(str(response, encoding='utf-8'))
+    response = str(response, encoding='utf-8')
+    resp_result = json.loads(response)
+    return resp_result
+
+
+def store_response_result(resp_result):
+    """
+    存储响应结果
+    :param resp_result:
+    :return:
+    """
+    # 解析数据
+    db_cluster_id = resp_result["DBClusterId"]
+    sql_slow_record = resp_result["Items"]["SQLSlowRecord"]
+    # 存储数据
+    parameters = []
+    for item in sql_slow_record:
+        # {'QueryTimes': 1, 'ExecutionStartTime': '2021-01-05T00:03:01Z', 'ReturnRowCounts': 0,
+        # 'LockTimes': 0, 'DBName': 'wms_7', 'ParseRowCounts': 552904,
+        # 'DBNodeId': 'pi-wz973o0ri94iwv5x4', 'HostAddress': 'online_wjhmadb_w[online_wjhmadb_w] @  [192.168.3.10]'
+        # , 'SQLText': 'U
+        # PDATE `wms_stock` stock SET stock.lock_qty = 0, stock.u_t = unix_timestamp(now()) * 1000 WHERE sto
+        # ck.warehouse_id = 7200 AND stock.lock_qty > 0'}
+        # 过滤掉一些不用的
+        db_name = item["DBName"]
+        if db_name == "":  # 数据库名称为空时
+            continue
+        sql_text = item["SQLText"]
+        if "Binlog Dump" in sql_text or "DMS-DATA_CORRECT" in sql_text or "/*DBS_urv7bfsmb4mx*/%" in sql_text or "sleep(" in sql_text:  # 其他系统的SQL语句
+            continue
+        host_address = item["HostAddress"]
+        if "online_wjhmadb_r" in host_address or "dms[dms]" in host_address:
+            continue
+        parameters.append([
+            db_cluster_id, db_name,
+            item["DBNodeId"], item["ExecutionStartTime"], host_address,
+            item["LockTimes"], item["QueryTimes"], item["ParseRowCounts"],
+            item["ReturnRowCounts"], sql_text
+        ])
+
+    mymysql.execute("""
+    INSERT INTO `polardb_slow_log`(`db_cluster_id`, `db_name`
+    , `db_node_id`, `execution_start_time`, `host_address`
+    , `lock_times`, `query_times`, `parse_row_counts`
+    , `return_row_counts`, `sql_text`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """, parameters, True)
+    # TODO 从SQL语句中抽取语句模块, 合并多条语句
+
+
+def start():
+    start_datetime = (datetime.today() + timedelta(-1)).strftime("%Y-%m-%d") + "T00:00Z"
+    end_datetime = (datetime.today() + timedelta(0)).strftime("%Y-%m-%d") + "T00:00Z"
+    page_number = 1
+    page_size = 100
+    while True:
+        resp_result = request_slow_log(db_cluster_id, start_datetime, end_datetime, page_number, page_size)
+        store_response_result(resp_result)
+        print(resp_result)
+        if page_number * page_size > resp_result["TotalRecordCount"]:
+            break
+        else:
+            page_number += 1
