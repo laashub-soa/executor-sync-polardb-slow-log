@@ -1,0 +1,8 @@
+aliyun-python-sdk-core==2.13.30
+aliyun-python-sdk-polardb==1.8.1
+cffi==1.14.4
+cryptography==3.2.1
+jmespath==0.10.0
+pycparser==2.20
+PyYAML==5.3.1
+six==1.15.0
