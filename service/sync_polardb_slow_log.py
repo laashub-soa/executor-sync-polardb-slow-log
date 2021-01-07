@@ -71,7 +71,13 @@ def store_response_result(resp_result):
         if db_name == "":  # 数据库名称为空时
             continue
         sql_text = item["SQLText"]
-        if "Binlog Dump" in sql_text or "DMS-DATA_CORRECT" in sql_text or "/*DBS_urv7bfsmb4mx*/%" in sql_text or "sleep(" in sql_text:  # 其他系统的SQL语句
+        sql_text_check = sql_text.lower()
+        if "binlog dump" in sql_text_check \
+                or "dms-data_correct" in sql_text_check \
+                or "/*dbs_urv7bfsmb4mx*/%" in sql_text_check \
+                or "select @@session.transaction_read_only" in sql_text_check \
+                or "prepare" in sql_text_check \
+                or "sleep(" in sql_text_check:  # 其他系统的SQL语句
             continue
         host_address = item["HostAddress"]
         if "online_wjhmadb_r" in host_address or "dms[dms]" in host_address:
@@ -94,6 +100,7 @@ def store_response_result(resp_result):
     , `return_row_counts`, `sql_text`, `data_timestamp`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """, parameters, True)
     # TODO 从SQL语句中抽取语句模块, 合并多条语句
+
 
 
 def start():

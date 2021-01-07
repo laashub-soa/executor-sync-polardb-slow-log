@@ -1,4 +1,3 @@
-import traceback
 from contextlib import closing
 
 import pymysql
@@ -39,3 +38,25 @@ def execute(sql, parameters=None, is_batch_insert=False):
     except Exception as e:
         raise MyServiceException("execute sql error: " + str(e))
     return execute_result
+
+
+def extra_sql_content_2_template(sql_content):
+    """
+    抽取SQL内容为SQL模板
+    :param sql_content: SQL内容
+    :return:
+    """
+    sql_template = sql_content
+    """
+    抽取SQL模板的思路: 
+    替换
+        > < = ! 
+            'xxx'   -> ?
+            数字    -> ?  
+            ()      -> 
+        in (xxx)  -> in(?)
+    """
+
+
+
+    return sql_template
