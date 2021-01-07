@@ -54,8 +54,8 @@ def extra_sql_template(sql_content):
             特殊字符+数字开头的+特殊字符   -> 特殊字符+?+特殊字符  
         in (xxx)                         -> in(?)
     """
-    print("=" * 200)
-    print("sql_content: %s" % sql_content)
+    # print("=" * 200)
+    # print("sql_content: %s" % sql_content)
     sql_template = ''
     is_quote_start = False  # 是否开始引号
     is_digit_start = False  # 是否开始数字
@@ -114,6 +114,6 @@ def extra_sql_template(sql_content):
                             is_question_start = False
         sql_template_back += item
     sql_template = sql_template_back
-    print("sql_template: %s" % sql_template)
+    # print("sql_template: %s" % sql_template)
 
     return sql_template
