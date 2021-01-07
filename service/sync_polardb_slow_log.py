@@ -97,7 +97,7 @@ def store_response_result(resp_result):
         ])
 
     mymysql.execute("""
-    INSERT INTO `polardb_slow_log_2`(`db_cluster_id`, `db_name`
+    INSERT INTO `polardb_slow_log`(`db_cluster_id`, `db_name`
     , `db_node_id`, `execution_start_time`, `host_address`
     , `lock_times`, `query_times`, `parse_row_counts`
     , `return_row_counts`, `sql_text`, `data_timestamp`

@@ -9,3 +9,5 @@ mysql:
   user: 1
   password: 1
   charset: utf8mb4
+trigger:
+  hour: 1
