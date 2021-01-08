@@ -108,18 +108,17 @@ def store_response_result(resp_result):
 
 def start():
     day_interval = -1
+    start_datetime = (datetime.today() + timedelta(day_interval)).strftime("%Y-%m-%d") + "T00:00Z"
+    print(start_datetime)
+    end_datetime = (datetime.today() + timedelta(day_interval + 1)).strftime("%Y-%m-%d") + "T00:00Z"
+    page_number = 1
+    page_size = 100
     while True:
-        start_datetime = (datetime.today() + timedelta(day_interval)).strftime("%Y-%m-%d") + "T00:00Z"
-        print(start_datetime)
-        end_datetime = (datetime.today() + timedelta(day_interval + 1)).strftime("%Y-%m-%d") + "T00:00Z"
-        page_number = 1
-        page_size = 100
-        while True:
-            resp_result = request_slow_log(db_cluster_id, start_datetime, end_datetime, page_number, page_size)
-            store_response_result(resp_result)
-            print(resp_result)
-            if page_number * page_size > resp_result["TotalRecordCount"]:
-                break
-            else:
-                page_number += 1
-        day_interval += -1
+        resp_result = request_slow_log(db_cluster_id, start_datetime, end_datetime, page_number, page_size)
+        store_response_result(resp_result)
+        print(resp_result)
+        if page_number * page_size > resp_result["TotalRecordCount"]:
+            break
+        else:
+            page_number += 1
+

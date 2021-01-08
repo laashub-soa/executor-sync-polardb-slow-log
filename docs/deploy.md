@@ -9,7 +9,7 @@ mkdir -p /data/tristan/soa/executor-sync-polardb-slow-log/config && chmod 777 /d
 
 docker run -d --restart=always --name executor-sync-polardb-slow-log \
   -v /data/tristan/soa/executor-sync-polardb-slow-log/config:/usr/src/app/configs \
-  laashubsoa/executor-sync-polardb-slow-log
+  laashubsoa/executor-sync-polardb-slow-log:0.0.2
 
 docker logs -f --tail 100 executor-sync-polardb-slow-log
 
