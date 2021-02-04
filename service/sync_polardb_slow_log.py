@@ -106,19 +106,47 @@ def store_response_result(resp_result):
     """, parameters, True)
 
 
-def start():
-    day_interval = -1
+def service(day_interval):
     start_datetime = (datetime.today() + timedelta(day_interval)).strftime("%Y-%m-%d") + "T00:00Z"
     print(start_datetime)
     end_datetime = (datetime.today() + timedelta(day_interval + 1)).strftime("%Y-%m-%d") + "T00:00Z"
     page_number = 1
     page_size = 100
+    max_page_number = 0
+    is_try_again_count = 0
     while True:
-        resp_result = request_slow_log(db_cluster_id, start_datetime, end_datetime, page_number, page_size)
-        store_response_result(resp_result)
-        print(resp_result)
-        if page_number * page_size > resp_result["TotalRecordCount"]:
+        resp_result = None
+        start_time_second = int(time.time())
+        try:
+            resp_result = request_slow_log(db_cluster_id, start_datetime, end_datetime, page_number, page_size)
+            if max_page_number == 0:
+                total_record_count = resp_result["TotalRecordCount"]
+                if total_record_count == 0:
+                    break
+                max_page_number = int(total_record_count / page_size) + 1
+
+        except Exception as e:
+            print("发生了异常: " + str(e))
+            if is_try_again_count < 4:
+                is_try_again_count += 1
+                time.sleep(1)
+                continue
+        finally:
+            print("page_number: %s/%s page_size: %s time_cost: %sS " % (
+                page_number, max_page_number + 1, page_size, (int(time.time()) - start_time_second)))
+        if resp_result:
+            store_response_result(resp_result)
+        if page_number > max_page_number:
             break
         else:
             page_number += 1
+        is_try_again_count = 0
+        time.sleep(1)
 
+
+def start():
+    day_interval = -1
+    # while True:
+    #     service(day_interval)
+    #     day_interval += -1
+    service(day_interval)
