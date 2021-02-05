@@ -16,7 +16,7 @@ executors = {
     'default': ThreadPoolExecutor(20),
 }
 if __name__ == '__main__':
-    sync_polardb_slow_log.start()
-    # scheduler.add_job(sync_polardb_slow_log.start, 'cron', hour=app_conf["trigger"]["hour"])
+    # sync_polardb_slow_log.start()
+    scheduler.add_job(sync_polardb_slow_log.start, 'cron', hour=app_conf["trigger"]["hour"])
     print("server is started")
     scheduler.start()
