@@ -16,7 +16,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 28,
-  "iteration": 1610028246962,
+  "iteration": 1612488644614,
   "links": [],
   "panels": [
     {
@@ -367,6 +367,18 @@
                 "value": 97
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "扫描行数"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 91
+              }
+            ]
           }
         ]
       },
@@ -393,7 +405,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n\tt.execution_start_time as '执行开始时间', t.db_name as '数据库', t.times as '次数',\r\n\tt.avg_qt as '平均耗时(秒)', t.max_qt as '最大耗时(秒)', t.avg_qt as '最小耗时(秒)',\r\n\tt.sql_template as 'SQL模板'\r\nfrom (\r\n\tselect distinct convert(sql_template using utf8) sql_template, data_timestamp, db_name,\r\n\t\texecution_start_time, count(1) as times,\r\n\t\tavg(query_times) avg_qt, max(query_times) max_qt, min(query_times) min_qt\r\n\tfrom polardb_slow_log\r\n\tWHERE\r\n\t\t$__unixEpochFilter(data_timestamp)\r\n\t\tand db_name in ($db_name)\r\n\tgroup by sql_template\r\n\t)t",
+          "rawSql": "SELECT\r\n\tt.execution_start_time as '执行开始时间', t.db_name as '数据库', t.times as '次数',\r\n\tt.avg_qt as '平均耗时(秒)', t.max_qt as '最大耗时(秒)', t.avg_qt as '最小耗时(秒)',\r\n\tt.parse_row_counts as '扫描行数',\r\n\tt.sql_template as 'SQL模板'\r\nfrom (\r\n\tselect distinct convert(sql_template using utf8) sql_template, data_timestamp, db_name, parse_row_counts,\r\n\t\texecution_start_time, count(1) as times,\r\n\t\tavg(query_times) avg_qt, max(query_times) max_qt, min(query_times) min_qt\r\n\tfrom polardb_slow_log\r\n\tWHERE\r\n\t\t$__unixEpochFilter(data_timestamp)\r\n\t\tand db_name in ($db_name)\r\n\tgroup by sql_template\r\n\t)t",
           "refId": "A",
           "select": [
             [
@@ -579,7 +591,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  execution_start_time as \"执行开始时间\",\n  query_times as \"耗时(秒)\",\n  db_name as \"数据库\",\n  convert(sql_text using utf8) \"sql\"\nFROM polardb_slow_log\nWHERE\n  $__unixEpochFilter(data_timestamp)\n    and db_name in ($db_name)\nORDER BY data_timestamp",
+          "rawSql": "SELECT\n  execution_start_time as \"执行开始时间\",\n  query_times as \"耗时(秒)\",\n  db_name as \"数据库\",\n  parse_row_counts as '扫描行数',\n  convert(sql_text using utf8) \"sql\"\nFROM polardb_slow_log\nWHERE\n  $__unixEpochFilter(data_timestamp)\n    and db_name in ($db_name)\nORDER BY data_timestamp",
           "refId": "A",
           "select": [
             [
@@ -618,12 +630,12 @@
       {
         "allValue": null,
         "current": {
-          "selected": true,
+          "selected": false,
           "text": [
-            "custshop"
+            "All"
           ],
           "value": [
-            "custshop"
+            "$__all"
           ]
         },
         "datasource": "POLARDB-业务实例",
@@ -656,5 +668,5 @@
   "timezone": "",
   "title": "慢SQL",
   "uid": "MN5YE2-Mk",
-  "version": 29
+  "version": 33
 }

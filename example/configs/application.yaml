@@ -10,4 +10,4 @@ mysql:
   password: 1
   charset: utf8mb4
 trigger:
-  hour: 1
+  hour: 23
