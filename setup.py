@@ -15,8 +15,20 @@ scheduler = BlockingScheduler()
 executors = {
     'default': ThreadPoolExecutor(20),
 }
+
+
+def test_one_day():
+    sync_polardb_slow_log.start()
+
+
+def run_one_day():
+    hours = app_conf["trigger"]["hours"]
+    for item in hours:
+        scheduler.add_job(sync_polardb_slow_log.start, 'cron', hour=item)
+
+
 if __name__ == '__main__':
-    # sync_polardb_slow_log.start()
-    scheduler.add_job(sync_polardb_slow_log.start, 'cron', hour=app_conf["trigger"]["hour"])
+    # test_one_day()
+    run_one_day()
     print("server is started")
     scheduler.start()

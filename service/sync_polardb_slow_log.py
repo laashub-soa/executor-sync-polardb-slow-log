@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 from datetime import timedelta, datetime
 
@@ -12,6 +13,8 @@ region = app_conf["region"]
 client = AcsClient(app_conf["access_key_id"], app_conf["access_secret"], region)
 
 db_cluster_id = app_conf["db_cluster_id"]
+logger = logging.getLogger('sync_polardb_slow_log')
+logger.setLevel(logging.DEBUG)
 
 
 def gen_execute_plan():
@@ -54,6 +57,7 @@ def store_response_result(resp_result):
     :param resp_result:
     :return:
     """
+    logger.debug("store_response_result")
     # 解析数据
     db_cluster_id = resp_result["DBClusterId"]
     sql_slow_record = resp_result["Items"]["SQLSlowRecord"]
@@ -106,14 +110,29 @@ def store_response_result(resp_result):
     """, parameters, True)
 
 
+def clear_day_data(day_interval):
+    """
+    清理某一天数据
+    :param day_interval: 时间间隔
+    :return:
+    """
+    day_name = (datetime.today() + timedelta(day_interval)).strftime("%Y-%m-%d") + "%"
+    mymysql.execute("""
+    delete 
+    from polardb_slow_log
+    where execution_start_time like %s
+    """, [day_name])
+
+
 def service(day_interval):
     start_datetime = (datetime.today() + timedelta(day_interval)).strftime("%Y-%m-%d") + "T00:00Z"
-    print(start_datetime)
     end_datetime = (datetime.today() + timedelta(day_interval + 1)).strftime("%Y-%m-%d") + "T00:00Z"
+    logger.debug("start_datetime - end_datetime: %s - %s" % (start_datetime, end_datetime))
     page_number = 1
     page_size = 100
     max_page_number = 0
-    is_try_again_count = 0
+    fail_try_again_count = 0
+    error_try_again_count = 0
     while True:
         resp_result = None
         start_time_second = int(time.time())
@@ -121,18 +140,27 @@ def service(day_interval):
             resp_result = request_slow_log(db_cluster_id, start_datetime, end_datetime, page_number, page_size)
             if max_page_number == 0:
                 total_record_count = resp_result["TotalRecordCount"]
-                if total_record_count == 0:
-                    break
+                if total_record_count < 1:
+                    if error_try_again_count < 100:
+                        error_try_again_count += 1
+                        logger.debug("error page try again:%s in %s second after" % (
+                            error_try_again_count, error_try_again_count))
+                        time.sleep(error_try_again_count)
+                        continue
+                    else:
+                        break
                 max_page_number = int(total_record_count / page_size) + 1
 
         except Exception as e:
-            print("发生了异常: " + str(e))
-            if is_try_again_count < 4:
-                is_try_again_count += 1
-                time.sleep(1)
+            logger.debug("发生了异常: " + str(e))
+            if fail_try_again_count < 100:
+                fail_try_again_count += 1
+                logger.debug("fail request try again:%s in %s second after" % (
+                    fail_try_again_count, fail_try_again_count))
+                time.sleep(fail_try_again_count)
                 continue
         finally:
-            print("page_number: %s/%s page_size: %s time_cost: %sS " % (
+            logger.debug("page_number: %s/%s page_size: %s time_cost: %sS " % (
                 page_number, max_page_number + 1, page_size, (int(time.time()) - start_time_second)))
         if resp_result:
             store_response_result(resp_result)
@@ -140,13 +168,15 @@ def service(day_interval):
             break
         else:
             page_number += 1
-        is_try_again_count = 0
+        fail_try_again_count = 0
         time.sleep(1)
 
 
 def start():
     day_interval = -1
     # while True:
+    #     clear_day_data(day_interval)
     #     service(day_interval)
     #     day_interval += -1
+    clear_day_data(day_interval)
     service(day_interval)
