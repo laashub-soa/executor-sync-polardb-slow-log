@@ -205,7 +205,7 @@ def service(day_interval):
 def start():
     global local_cache_sql_template_id_2_text
     local_cache_sql_template_id_2_text = {}
-    day_interval = 0
+    day_interval = -1
     # while True:
     #     clear_day_data(day_interval)
     #     service(day_interval)
