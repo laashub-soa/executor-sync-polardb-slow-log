@@ -99,7 +99,8 @@ def store_response_result(resp_result):
             item["ReturnRowCounts"], sql_text, data_timestamp,
             sql_template
         ])
-
+    if len(parameters) < 1:
+        return
     mymysql.execute("""
     INSERT INTO `polardb_slow_log`(`db_cluster_id`, `db_name`
     , `db_node_id`, `execution_start_time`, `host_address`
@@ -107,7 +108,7 @@ def store_response_result(resp_result):
     , `return_row_counts`, `sql_text`, `data_timestamp`
     , `sql_template`
     ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-    """, parameters, True)
+    """, parameters)
 
 
 def clear_day_data(day_interval):

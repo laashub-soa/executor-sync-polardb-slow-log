@@ -18,15 +18,21 @@ def init(mysql_config):
         mymysql.db_pool = PooledDB(pymysql, **mysql_config)
 
 
-def execute(sql, parameters=None, is_batch_insert=False):
+def execute(sql, parameters=None):
+    print("sql: \n %s \n parameters: %s" % (sql, parameters))
     execute_result = None
     if not parameters:
         parameters = {}
     try:
         with closing(mymysql.db_pool.connection()) as conn:
             with closing(conn.cursor()) as cursor:
-                if is_batch_insert:
-                    cursor.executemany(sql, parameters)
+                if isinstance(parameters, list):
+                    # if len(parameters) < 1:
+                    #     return None
+                    num = cursor.executemany(sql, parameters)
+                    if num > 0:
+                        last_rowid = int(cursor.lastrowid)
+                        execute_result = list(range(last_rowid - num + 1, last_rowid + 1))
                 else:
                     cursor.execute(sql, parameters)
                     # consider it INSERT or other
