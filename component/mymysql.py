@@ -26,23 +26,25 @@ def execute(sql, parameters=None):
     try:
         with closing(mymysql.db_pool.connection()) as conn:
             with closing(conn.cursor()) as cursor:
-                if isinstance(parameters, list):
-                    # if len(parameters) < 1:
-                    #     return None
-                    num = cursor.executemany(sql, parameters)
-                    if num > 0:
-                        last_rowid = int(cursor.lastrowid)
-                        execute_result = list(range(last_rowid - num + 1, last_rowid + 1))
-                else:
+                if sql.strip()[:len("SELECT")].upper() == "SELECT":
                     cursor.execute(sql, parameters)
-                    # consider it INSERT or other
-                    if sql.strip()[:len("INSERT")].upper() == "INSERT":
-                        execute_result = cursor.lastrowid
+                    execute_result = cursor.fetchall()
+                else:
+                    if isinstance(parameters, list):
+                        num = cursor.executemany(sql, parameters)
+                        if num > 0:
+                            last_rowid = int(cursor.lastrowid)
+                            execute_result = list(range(last_rowid - num + 1, last_rowid + 1))
                     else:
-                        execute_result = cursor.fetchall()
-                conn.commit()
-    except Exception as e:
-        raise MyServiceException("execute sql error: " + str(e))
+                        cursor.execute(sql, parameters)
+                        execute_result = cursor.lastrowid
+                    conn.commit()
+    except Exception:
+        import traceback, sys
+        traceback.print_exc()  # 打印异常信息
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        error = str(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
+        raise MyServiceException("execute sql error: " + error)
     return execute_result
 
 

@@ -17,14 +17,6 @@ logger = logging.getLogger('sync_polardb_slow_log')
 logger.setLevel(logging.DEBUG)
 
 
-def gen_execute_plan():
-    """
-    生成执行计划
-    :return:
-    """
-    pass
-
-
 def request_slow_log(db_cluster_id, start_datetime, end_datetime, page_number, page_size):
     """
     请求慢SQL日志
@@ -49,6 +41,38 @@ def request_slow_log(db_cluster_id, start_datetime, end_datetime, page_number, p
     response = str(response, encoding='utf-8')
     resp_result = json.loads(response)
     return resp_result
+
+
+local_cache_sql_template_id_2_text = {}
+
+
+def select_sql_template_id_by_text(db_cluster_id, db_name, db_node_id, sql_template_text):
+    # 在本地查询
+    global local_cache_sql_template_id_2_text
+    if local_cache_sql_template_id_2_text.__contains__(db_name):
+        local_cache_sql_template_id_2_text_db_level = local_cache_sql_template_id_2_text[db_name]
+        if local_cache_sql_template_id_2_text_db_level.__contains__(sql_template_text):
+            return local_cache_sql_template_id_2_text_db_level[sql_template_text]
+    # 在数据库中查询
+    sql_template_id = mymysql.execute("""
+    SELECT ID FROM polardb_slow_log_template WHERE db_name=%s and convert(sql_text using utf8) = %s
+    """, [db_name, sql_template_text])
+    sql_template_id = list(sql_template_id)
+    if len(sql_template_id) < 1:
+        insert_sql_result = mymysql.execute("""
+        INSERT INTO `polardb_slow_log_template`(`db_cluster_id`, `db_name`, `db_node_id`, `sql_text`) 
+        VALUES (%s, %s, %s, %s)
+            """, [[db_cluster_id, db_name, db_node_id, sql_template_text]])
+        logger.debug("insert_sql_result: %s" % insert_sql_result)
+        sql_template_id = insert_sql_result[0]
+    else:
+        sql_template_id = sql_template_id[0]["ID"]
+    # 更新本地缓存
+    logger.debug("sql_template_id: %s" % sql_template_id)
+    if not local_cache_sql_template_id_2_text.__contains__(db_name):
+        local_cache_sql_template_id_2_text[db_name] = {}
+    local_cache_sql_template_id_2_text[db_name][sql_template_text] = sql_template_id
+    return sql_template_id
 
 
 def store_response_result(resp_result):
@@ -90,14 +114,16 @@ def store_response_result(resp_result):
         # 2021-01-05T00:03:01Z
         data_timestamp = int(
             time.mktime(time.strptime(execution_start_time[:-6] + "00:00Z", '%Y-%m-%dT%H:%M:%SZ')))  # 丢失掉秒钟精度
+        db_node_id = item["DBNodeId"]
         # 生成sql模板
-        sql_template = mymysql.extra_sql_template(sql_text)
+        sql_template_text = mymysql.extra_sql_template(sql_text)
+        sql_template_id = select_sql_template_id_by_text(db_cluster_id, db_name, db_node_id, sql_template_text)
         parameters.append([
             db_cluster_id, db_name,
             item["DBNodeId"], execution_start_time, host_address,
             item["LockTimes"], item["QueryTimes"], item["ParseRowCounts"],
             item["ReturnRowCounts"], sql_text, data_timestamp,
-            sql_template
+            sql_template_id
         ])
     if len(parameters) < 1:
         return
@@ -106,7 +132,7 @@ def store_response_result(resp_result):
     , `db_node_id`, `execution_start_time`, `host_address`
     , `lock_times`, `query_times`, `parse_row_counts`
     , `return_row_counts`, `sql_text`, `data_timestamp`
-    , `sql_template`
+    , `sql_template_id`
     ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """, parameters)
 
@@ -174,7 +200,9 @@ def service(day_interval):
 
 
 def start():
-    day_interval = -1
+    global local_cache_sql_template_id_2_text
+    local_cache_sql_template_id_2_text = {}
+    day_interval = 0
     # while True:
     #     clear_day_data(day_interval)
     #     service(day_interval)

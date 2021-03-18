@@ -17,6 +17,9 @@ CREATE TABLE `polardb_slow_log`  (
 
 CREATE TABLE `polardb_slow_log_template`  (
   `id` int(0) NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `db_cluster_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '集群ID',
+  `db_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '数据库名称',
+  `db_node_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '节点ID',
   `sql_text` mediumblob NULL COMMENT '查询语句',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 0 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = Dynamic;
