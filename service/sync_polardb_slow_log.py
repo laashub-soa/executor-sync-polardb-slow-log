@@ -110,6 +110,9 @@ def store_response_result(resp_result):
         host_address = item["HostAddress"]
         if "online_wjhmadb_r" in host_address or "dms[dms]" in host_address:
             continue
+        query_times = item["QueryTimes"]
+        if query_times < 2:
+            continue
         execution_start_time = item["ExecutionStartTime"]
         # 2021-01-05T00:03:01Z
         data_timestamp = int(
@@ -121,7 +124,7 @@ def store_response_result(resp_result):
         parameters.append([
             db_cluster_id, db_name,
             item["DBNodeId"], execution_start_time, host_address,
-            item["LockTimes"], item["QueryTimes"], item["ParseRowCounts"],
+            item["LockTimes"], query_times, item["ParseRowCounts"],
             item["ReturnRowCounts"], sql_text, data_timestamp,
             sql_template_id
         ])

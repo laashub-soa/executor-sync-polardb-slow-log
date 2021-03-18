@@ -16,7 +16,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 28,
-  "iteration": 1612488644614,
+  "iteration": 1616073041742,
   "links": [],
   "panels": [
     {
@@ -74,7 +74,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select \r\n  t.data_timestamp AS \"time\",\r\n  count(1) as \"每小时出现次数\"\r\nfrom (\r\nselect distinct convert(sql_template using utf8) sql_text, data_timestamp\r\nfrom polardb_slow_log\r\nWHERE\r\n  $__unixEpochFilter(data_timestamp)\r\n  and db_name in ($db_name)\r\n\t)t\r\ngroup by data_timestamp\r\nORDER BY data_timestamp",
+          "rawSql": "SELECT\n\tt.data_timestamp AS \"time\",\n\tcount( 1 ) AS \"每小时出现次数\" \nFROM\n\t(\n\tSELECT DISTINCT sql_template_id,\n\t\tdata_timestamp \n\tFROM\n\t\tpolardb_slow_log \n\tWHERE\n\t\t$__unixEpochFilter(data_timestamp)\n\tAND db_name IN ( $db_name )\n\tand sql_template_id in ($sql_template_id)\n\t) t \nGROUP BY\n\tt.data_timestamp \nORDER BY\n\tt.data_timestamp",
           "refId": "A",
           "select": [
             [
@@ -304,7 +304,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 92
+                "value": 127
               }
             ]
           },
@@ -328,7 +328,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 39
+                "value": 66
               }
             ]
           },
@@ -340,7 +340,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 100
+                "value": 101
               }
             ]
           },
@@ -352,7 +352,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 109
+                "value": 104
               }
             ]
           },
@@ -364,7 +364,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 97
+                "value": 96
               }
             ]
           },
@@ -376,7 +376,19 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 91
+                "value": 82
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "SQL模板ID"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 89
               }
             ]
           }
@@ -405,7 +417,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n\tt.execution_start_time as '执行开始时间', t.db_name as '数据库', t.times as '次数',\r\n\tt.avg_qt as '平均耗时(秒)', t.max_qt as '最大耗时(秒)', t.avg_qt as '最小耗时(秒)',\r\n\tt.parse_row_counts as '扫描行数',\r\n\tt.sql_template as 'SQL模板'\r\nfrom (\r\n\tselect distinct convert(sql_template using utf8) sql_template, data_timestamp, db_name, parse_row_counts,\r\n\t\texecution_start_time, count(1) as times,\r\n\t\tavg(query_times) avg_qt, max(query_times) max_qt, min(query_times) min_qt\r\n\tfrom polardb_slow_log\r\n\tWHERE\r\n\t\t$__unixEpochFilter(data_timestamp)\r\n\t\tand db_name in ($db_name)\r\n\tgroup by sql_template\r\n\t)t",
+          "rawSql": "SELECT\n  t.id AS 'SQL模板ID',\n\tt.db_name AS '数据库',\n\tt.times AS '次数',\n\tFLOOR( t.avg_qt ) AS '平均耗时(秒)',\n\tt.max_qt AS '最大耗时(秒)',\n\tt.min_qt AS '最小耗时(秒)',\n\tt.parse_row_counts AS '扫描行数',\n\tt.sql_text AS 'SQL模板' \nFROM\n\t(\n\tSELECT\n\t\tpslt.id,\n\t\tpslt.db_name,\n\t\tCONVERT ( pslt.sql_text USING utf8 ) sql_text,\n\t\tpsl.data_timestamp,\n\t\tpsl.parse_row_counts,\n\t\tpsl.execution_start_time,\n\t\tcount( 1 ) AS times,\n\t\tavg( psl.query_times ) avg_qt,\n\t\tmax( psl.query_times ) max_qt,\n\t\tmin( psl.query_times ) min_qt \n\tFROM\n\t\tpolardb_slow_log_template pslt\n\t\tLEFT JOIN polardb_slow_log psl ON pslt.db_name = psl.db_name \n\t\tAND pslt.id = psl.sql_template_id\n\tWHERE $__unixEpochFilter(data_timestamp) and pslt.db_name in ($db_name) and pslt.id in ($sql_template_id)\n\tGROUP BY\n\t\tdb_name,\n\t\tsql_text \n\t) t \nORDER BY\n\tt.times DESC",
           "refId": "A",
           "select": [
             [
@@ -565,6 +577,18 @@
                 "value": 95
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "扫描行数"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 88
+              }
+            ]
           }
         ]
       },
@@ -591,7 +615,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  execution_start_time as \"执行开始时间\",\n  query_times as \"耗时(秒)\",\n  db_name as \"数据库\",\n  parse_row_counts as '扫描行数',\n  convert(sql_text using utf8) \"sql\"\nFROM polardb_slow_log\nWHERE\n  $__unixEpochFilter(data_timestamp)\n    and db_name in ($db_name)\nORDER BY data_timestamp",
+          "rawSql": "SELECT\n  execution_start_time as \"执行开始时间\",\n  query_times as \"耗时(秒)\",\n  db_name as \"数据库\",\n  parse_row_counts as '扫描行数',\n  convert(sql_text using utf8) \"sql\"\nFROM polardb_slow_log\nWHERE\n  $__unixEpochFilter(data_timestamp)\n    and db_name in ($db_name)\n    and sql_template_id in ($sql_template_id)\nORDER BY data_timestamp",
           "refId": "A",
           "select": [
             [
@@ -639,7 +663,7 @@
           ]
         },
         "datasource": "POLARDB-业务实例",
-        "definition": "select distinct db_name from polardb_slow_log",
+        "definition": "select distinct db_name from polardb_slow_log WHERE $__unixEpochFilter(data_timestamp)",
         "error": null,
         "hide": 0,
         "includeAll": true,
@@ -647,7 +671,7 @@
         "multi": true,
         "name": "db_name",
         "options": [],
-        "query": "select distinct db_name from polardb_slow_log",
+        "query": "select distinct db_name from polardb_slow_log WHERE $__unixEpochFilter(data_timestamp)",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -657,16 +681,48 @@
         "tagsQuery": "",
         "type": "query",
         "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": true,
+          "tags": [],
+          "text": [
+            "5"
+          ],
+          "value": [
+            "5"
+          ]
+        },
+        "datasource": "POLARDB-业务实例",
+        "definition": "select distinct sql_template_id from polardb_slow_log WHERE $__unixEpochFilter(data_timestamp)",
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": "SQL模板ID",
+        "multi": true,
+        "name": "sql_template_id",
+        "options": [],
+        "query": "select distinct sql_template_id from polardb_slow_log WHERE $__unixEpochFilter(data_timestamp)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
       }
     ]
   },
   "time": {
-    "from": "now-2d",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "慢SQL",
   "uid": "MN5YE2-Mk",
-  "version": 33
+  "version": 42
 }
