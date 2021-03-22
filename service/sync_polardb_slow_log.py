@@ -8,6 +8,7 @@ from aliyunsdkpolardb.request.v20170801.DescribeSlowLogRecordsRequest import Des
 
 from component import mymysql
 from config import app_conf
+from service import serious_sql_alarm
 
 region = app_conf["region"]
 client = AcsClient(app_conf["access_key_id"], app_conf["access_secret"], region)
@@ -203,12 +204,11 @@ def service(day_interval):
 
 
 def start():
+    day_interval = -1
     global local_cache_sql_template_id_2_text
     local_cache_sql_template_id_2_text = {}
-    day_interval = -1
-    # while True:
-    #     clear_day_data(day_interval)
-    #     service(day_interval)
-    #     day_interval += -1
     clear_day_data(day_interval)
     service(day_interval)
+    # 严重SQL告警
+    day_name = (datetime.today() + timedelta(day_interval)).strftime("%Y-%m-%d") + "%"
+    serious_sql_alarm.select_serious_sql(day_name)

@@ -7,8 +7,9 @@ pip install PyYAML
     
 pip install apscheduler
 
-
+pip install requests
 
 
 pip freeze > requirements.txt
+
 
