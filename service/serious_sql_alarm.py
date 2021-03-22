@@ -38,7 +38,6 @@ def select_serious_sql(special_day):
         t.sql_count >= %s
         order by t.sql_count desc
     """, [special_day, serious_sql_maximum_tolerance_count])
-    print(str(serious_sql_list))
     alarm_title = "%s %s种严重慢SQL(%s次+):\n\n" % (
         special_day[:-1], len(serious_sql_list), serious_sql_maximum_tolerance_count)
     """
@@ -59,7 +58,6 @@ def select_serious_sql(special_day):
             at_mobiles.append(owner_phone)
         owner_name = "@%s" % owner_phone
         link_grafana_url = grafana_base_url.format(db_name=db_name, sql_template_id=sql_template_id)
-        print(link_grafana_url)
         db_name__sql_template_id = "%s-%s" % (db_name, sql_template_id)
         display_db_name__sql_template_id = "[%s](%s)" % (db_name__sql_template_id, link_grafana_url)
         alarm_msg += "| %s                | %s 次        | %s\n\n" % (
