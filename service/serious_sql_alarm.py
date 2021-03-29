@@ -40,6 +40,8 @@ def select_serious_sql(special_day):
     """, [special_day, serious_sql_maximum_tolerance_count])
     alarm_title = "%s %s种严重慢SQL(%s次+):\n\n" % (
         special_day[:-1], len(serious_sql_list), serious_sql_maximum_tolerance_count)
+    if len(serious_sql_list) < 1:
+        return
     """
     | 数据库名称: SQL模板ID | 慢SQL次数 | 数据库负责人 |
     | --------------------- | --------- | ------------ |
