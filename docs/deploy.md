@@ -10,7 +10,7 @@ docker run -d --restart=always --name executor-sync-polardb-slow-log \
   -v /etc/timezone:/etc/timezone \
   -v /etc/localtime:/etc/localtime \
   -v /data/tristan/soa/executor-sync-polardb-slow-log/config:/usr/src/app/configs \
-  laashubsoa/executor-sync-polardb-slow-log:0.0.10
+  laashubsoa/executor-sync-polardb-slow-log:0.0.11
 
 docker logs -f --tail 100 executor-sync-polardb-slow-log
 
