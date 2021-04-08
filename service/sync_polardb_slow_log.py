@@ -105,23 +105,23 @@ def store_response_result(resp_result):
         global exclude_key_word
         exclude_key_word_sql = exclude_key_word["sql"]
         exclude_key_word_sql_contains = exclude_key_word_sql["contains"]
-        exclude_key_word_sql_equals = exclude_key_word_sql["equals"]
         for exclude_key_word_sql_contains_item in exclude_key_word_sql_contains:
             if exclude_key_word_sql_contains_item in sql_text:
                 is_need_exclude = True
                 continue
-        for exclude_key_word_sql_equals_item in exclude_key_word_sql_equals:
-            if exclude_key_word_sql_equals_item == sql_text:
+        exclude_key_word_sql_start_with = exclude_key_word_sql["start_with"]
+        for exclude_key_word_sql_start_with_item in exclude_key_word_sql_start_with:
+            if sql_text.startswith(exclude_key_word_sql_start_with_item):
+                is_need_exclude = True
+                continue
+        host_address = item["HostAddress"]
+        exclude_key_word_host_address = exclude_key_word["host_address"]
+        for exclude_key_word_host_address_item in exclude_key_word_host_address:
+            if exclude_key_word_host_address_item in host_address:
                 is_need_exclude = True
                 continue
         if is_need_exclude:
             continue
-        host_address = item["HostAddress"]
-        exclude_key_word_host_address = exclude_key_word["host_address"]
-        exclude_key_word_host_address_contains = exclude_key_word_host_address["contains"]
-        for exclude_key_word_host_address_contains_item in exclude_key_word_host_address_contains:
-            if exclude_key_word_host_address_contains_item in host_address:
-                continue
         query_times = item["QueryTimes"]
         execution_start_time = item["ExecutionStartTime"]
         # 2021-01-05T00:03:01Z

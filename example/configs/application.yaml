@@ -2,6 +2,21 @@ access_key_id: 1
 access_secret: 1
 region: 1
 db_cluster_id: 1
+# 需要排除的SQL 关键字
+exclude_key_word:
+  sql:
+    contains:
+      - binlog dump
+      - dms-data_correct
+      - /*dbs_urv7bfsmb4mx*/%
+      - select @@session.transaction_read_only
+    start_with:
+      - prepare
+      - sleep(
+      - rollback
+  host_address:
+    - online_wjhmadb_r
+    - dms[dms]
 mysql:
   host: 1
   port: 1
