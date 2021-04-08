@@ -17,7 +17,7 @@ executors = {
 }
 
 
-def test_one_day():
+def test_run_one_day():
     sync_polardb_slow_log.start()
 
 
@@ -28,7 +28,7 @@ def run_one_day():
 
 
 if __name__ == '__main__':
-    # test_one_day()
+    # test_run_one_day()
     run_one_day()
     print("server is started")
     scheduler.start()

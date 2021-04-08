@@ -11,6 +11,7 @@ from config import app_conf
 from service import serious_sql_alarm
 
 region = app_conf["region"]
+exclude_key_word = app_conf["exclude_key_word"]
 client = AcsClient(app_conf["access_key_id"], app_conf["access_secret"], region)
 
 db_cluster_id = app_conf["db_cluster_id"]
@@ -99,21 +100,29 @@ def store_response_result(resp_result):
         db_name = item["DBName"]
         if db_name == "":  # 数据库名称为空时
             continue
-        sql_text = item["SQLText"]
-        sql_text_check = sql_text.lower()
-        if "binlog dump" in sql_text_check \
-                or "dms-data_correct" in sql_text_check \
-                or "/*dbs_urv7bfsmb4mx*/%" in sql_text_check \
-                or "select @@session.transaction_read_only" in sql_text_check \
-                or "prepare" in sql_text_check \
-                or "sleep(" in sql_text_check:  # 其他系统的SQL语句
+        sql_text = item["SQLText"].lower()
+        is_need_exclude = False
+        global exclude_key_word
+        exclude_key_word_sql = exclude_key_word["sql"]
+        exclude_key_word_sql_contains = exclude_key_word_sql["contains"]
+        exclude_key_word_sql_equals = exclude_key_word_sql["equals"]
+        for exclude_key_word_sql_contains_item in exclude_key_word_sql_contains:
+            if exclude_key_word_sql_contains_item in sql_text:
+                is_need_exclude = True
+                continue
+        for exclude_key_word_sql_equals_item in exclude_key_word_sql_equals:
+            if exclude_key_word_sql_equals_item == sql_text:
+                is_need_exclude = True
+                continue
+        if is_need_exclude:
             continue
         host_address = item["HostAddress"]
-        if "online_wjhmadb_r" in host_address or "dms[dms]" in host_address:
-            continue
+        exclude_key_word_host_address = exclude_key_word["host_address"]
+        exclude_key_word_host_address_contains = exclude_key_word_host_address["contains"]
+        for exclude_key_word_host_address_contains_item in exclude_key_word_host_address_contains:
+            if exclude_key_word_host_address_contains_item in host_address:
+                continue
         query_times = item["QueryTimes"]
-        if query_times < 2:
-            continue
         execution_start_time = item["ExecutionStartTime"]
         # 2021-01-05T00:03:01Z
         data_timestamp = int(

@@ -45,7 +45,7 @@ def select_serious_sql(special_day):
     """
     | 数据库名称: SQL模板ID | 慢SQL次数 | 数据库负责人 |
     | --------------------- | --------- | ------------ |
-    | wms: 1                | 5         | 喻庆捷       |  
+    | wms: 1                | 5         | A       |  
     """
     alarm_msg = "| 数据库名称-SQL模板ID | 慢SQL次数 | 数据库负责人 \n\n"
     alarm_msg += "| --------------------- | --------- | ------------ \n\n"
@@ -65,4 +65,5 @@ def select_serious_sql(special_day):
         alarm_msg += "| %s                | %s 次        | %s\n\n" % (
             display_db_name__sql_template_id, sql_count, owner_name)
     msg_content = alarm_title + alarm_msg
+    logger.debug(msg_content)
     post_alarm(msg_content, at_mobiles)
